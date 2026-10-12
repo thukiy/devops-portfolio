@@ -16,3 +16,13 @@ git clone https://github.com/thukiy/devops-portfolio.git
 cd devops-portfolio
 javac -d target/classes src/main/java/ch/fhgr/devops/App.java
 ```
+
+## Usage
+
+```bash
+java -cp target/classes ch.fhgr.devops.App
+# Hello, World!
+
+java -cp target/classes ch.fhgr.devops.App Thuki
+# Hello, Thuki!
+```
