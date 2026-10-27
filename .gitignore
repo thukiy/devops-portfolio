@@ -1,9 +1,17 @@
 # Build output
-target/
+build/
+dist/
+*.egg-info/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
 
 # IDE
 .idea/
-*.iml
 .vscode/
 
 # OS
@@ -16,4 +24,3 @@ Thumbs.db
 # Secrets
 .env
 *.key
-application-local.properties
