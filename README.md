@@ -1,12 +1,12 @@
 # devops-portfolio
 
-A small Java command-line program, built as the final project for the
+A small Python command-line program, built as the final project for the
 CDS212 DevOps module at FH Graubünden. The project grows every week with
 DevOps topics such as testing, CI/CD and containers.
 
 ## Prerequisites
 
-- Java 21 (JDK)
+- Python 3.10 or newer
 - Git
 
 ## Installation / Setup
@@ -14,15 +14,24 @@ DevOps topics such as testing, CI/CD and containers.
 ```bash
 git clone https://github.com/thukiy/devops-portfolio.git
 cd devops-portfolio
-javac -d target/classes src/main/java/ch/fhgr/devops/App.java
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
 ```
 
 ## Usage
 
 ```bash
-java -cp target/classes ch.fhgr.devops.App
+devops-portfolio
 # Hello, World!
 
-java -cp target/classes ch.fhgr.devops.App Thuki
+devops-portfolio Thuki
+# Hello, Thuki!
+```
+
+Without installing, you can also run it directly:
+
+```bash
+PYTHONPATH=src python3 -m devops_portfolio Thuki
 # Hello, Thuki!
 ```
