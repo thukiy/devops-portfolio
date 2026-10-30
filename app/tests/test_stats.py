@@ -8,40 +8,69 @@ from app.routes import routes
 from app.routes.routes import Stats, bp
 
 
-def make_task(done):
-    return SimpleNamespace(done=done)
+def make_expense(amount, category="food"):
+    return SimpleNamespace(amount=amount, category=category)
 
 
-def test_counts_done_and_open():
-    tasks = [make_task(done=True), make_task(done=False), make_task(done=True)]
-    stats = Stats(tasks)
-    assert stats.total == 3
-    assert stats.done == 2
-    assert stats.open == 1
-
-
-@pytest.mark.parametrize("flags, expected_total, expected_done, expected_open", [
-    ([], 0, 0, 0),
-    ([True], 1, 1, 0),
-    ([False], 1, 0, 1),
-    ([True, False], 2, 1, 1),
-    ([True, True], 2, 2, 0),
-    ([False, False], 2, 0, 2),
-])
-def test_stats(flags, expected_total, expected_done, expected_open):
-    stats = Stats([make_task(done=flag) for flag in flags])
-    assert stats.total == expected_total
-    assert stats.done == expected_done
-    assert stats.open == expected_open
-
-
-def test_stats_endpoint(monkeypatch):
-    monkeypatch.setattr(routes, "TASKS", [make_task(done=True), make_task(done=False)])
+@pytest.fixture
+def client(monkeypatch):
+    monkeypatch.setattr(routes, "EXPENSES", [])
     app = FastAPI()
     app.include_router(bp)
-    client = TestClient(app)
+    return TestClient(app)
 
-    response = client.get("/api/todos/stats")
+
+def test_empty_stats():
+    stats = Stats([])
+    assert stats.count == 0
+    assert stats.total == 0
+    assert stats.by_category == {}
+
+
+@pytest.mark.parametrize("amounts, expected_total", [
+    ([12.5], 12.5),
+    ([0.1, 0.2], 0.3),
+    ([10, 20, 30.75], 60.75),
+])
+def test_total(amounts, expected_total):
+    stats = Stats([make_expense(amount) for amount in amounts])
+    assert stats.count == len(amounts)
+    assert stats.total == expected_total
+
+
+def test_by_category():
+    expenses = [
+        make_expense(10, "food"),
+        make_expense(5.5, "food"),
+        make_expense(80, "rent"),
+    ]
+    assert Stats(expenses).by_category == {"food": 15.5, "rent": 80}
+
+
+def test_add_and_list_expenses(client):
+    expense = {"description": "Groceries", "amount": 42.9, "category": "food", "date": "2026-10-30"}
+
+    response = client.post("/api/expenses", json=expense)
+    assert response.status_code == 201
+    assert response.json() == expense
+
+    assert client.get("/api/expenses").json() == [expense]
+
+
+def test_rejects_non_positive_amount(client):
+    expense = {"description": "Refund", "amount": 0, "category": "food", "date": "2026-10-30"}
+
+    response = client.post("/api/expenses", json=expense)
+
+    assert response.status_code == 422
+    assert client.get("/api/expenses").json() == []
+
+
+def test_stats_endpoint(client):
+    client.post("/api/expenses", json={"description": "Lunch", "amount": 15, "category": "food", "date": "2026-10-30"})
+    client.post("/api/expenses", json={"description": "Train", "amount": 8.4, "category": "transport", "date": "2026-10-30"})
+
+    response = client.get("/api/expenses/stats")
 
     assert response.status_code == 200
-    assert response.json() == {"total": 2, "done": 1, "open": 1}
+    assert response.json() == {"count": 2, "total": 23.4, "by_category": {"food": 15, "transport": 8.4}}
